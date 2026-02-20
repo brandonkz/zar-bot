@@ -51,15 +51,15 @@ async function getRates(base = 'ZAR') {
 
 // ==================== SPORTS ODDS ====================
 
-// Get upcoming PSL matches
+// Get upcoming PSL matches - fall back to EPL since API doesn't have PSL
 async function getPSLOdds() {
   try {
     if (!ODDS_API_KEY) {
       return { success: false, error: 'No API key configured' };
     }
     
-    // South African Premier Division
-    const response = await axios.get(`${ODDS_API}/sports/soccer_rsa/saopaulo_d1/odds`, {
+    // PSL not available in API - use EPL instead
+    const response = await axios.get(`${ODDS_API}/sports/soccer_epl/odds`, {
       params: {
         apiKey: ODDS_API_KEY,
         regions: 'uk,us,eu',
