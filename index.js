@@ -300,3 +300,151 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`bet-bot running on port ${PORT}`));
+
+// ==================== TELEGRAM BOT ====================
+
+const { Telegraf } = require('telegraf');
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+if (TELEGRAM_BOT_TOKEN) {
+  const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
+  
+  bot.start((ctx) => {
+    ctx.reply(`⚽ BetSorted Bot
+    
+Commands:
+/psl - Today's PSL odds
+/epl - Today's EPL odds  
+/ucl - Champions League odds
+/rates - ZAR exchange rates
+/usdzar - USD to ZAR
+/help - Show all commands
+
+Bet with the best odds → betsorted.co.za`);
+  });
+  
+  bot.help((ctx) => {
+    ctx.reply(`⚽ BetSorted Bot Commands:
+
+/psl - Today's PSL odds
+/epl - Today's EPL odds
+/ucl - Today's Champions League odds
+/rates - ZAR exchange rates
+/usdzar - Convert USD to ZAR
+/eurzar - Convert EUR to ZAR
+/gbpzar - Convert GBP to ZAR
+/help - Show all commands
+
+Bet with the best odds → betsorted.co.za`);
+  });
+  
+  // Currency commands
+  bot.command('rates', async (ctx) => {
+    const result = await getRates('ZAR');
+    ctx.reply(formatRatesForTelegram(result));
+  });
+  
+  bot.command('usdzar', async (ctx) => {
+    const result = await convert('USD', 'ZAR');
+    if (result.success) {
+      ctx.reply(`${result.formatted}\n\n🔗 betsorted.co.za`);
+    } else {
+      ctx.reply(`Error: ${result.error}`);
+    }
+  });
+  
+  bot.command('eurzar', async (ctx) => {
+    const result = await convert('EUR', 'ZAR');
+    if (result.success) {
+      ctx.reply(`${result.formatted}\n\n🔗 betsorted.co.za`);
+    } else {
+      ctx.reply(`Error: ${result.error}`);
+    }
+  });
+  
+  bot.command('gbpzar', async (ctx) => {
+    const result = await convert('GBP', 'ZAR');
+    if (result.success) {
+      ctx.reply(`${result.formatted}\n\n🔗 betsorted.co.za`);
+    } else {
+      ctx.reply(`Error: ${result.error}`);
+    }
+  });
+  
+  // Odds commands
+  bot.command('psl', async (ctx) => {
+    ctx.reply('⏳ Fetching PSL odds...');
+    const result = await getPSLOdds();
+    ctx.reply(formatOddsForTelegram(result, 'PSL'));
+  });
+  
+  bot.command('epl', async (ctx) => {
+    ctx.reply('⏳ Fetching EPL odds...');
+    const result = await getEPLOdds();
+    ctx.reply(formatOddsForTelegram(result, 'EPL'));
+  });
+  
+  bot.command('ucl', async (ctx) => {
+    ctx.reply('⏳ Fetching Champions League odds...');
+    const result = await getUCLOdds();
+    ctx.reply(formatOddsForTelegram(result, 'UCL'));
+  });
+  
+  // Handle other messages
+  bot.on('text', async (ctx) => {
+    const msg = ctx.message.text.toUpperCase();
+    
+    if (msg.includes('PSL')) {
+      const result = await getPSLOdds();
+      ctx.reply(formatOddsForTelegram(result, 'PSL'));
+    } else if (msg.includes('EPL')) {
+      const result = await getEPLOdds();
+      ctx.reply(formatOddsForTelegram(result, 'EPL'));
+    } else if (msg.includes('UCL')) {
+      const result = await getUCLOdds();
+      ctx.reply(formatOddsForTelegram(result, 'UCL'));
+    } else if (msg.includes('RATES') || msg.includes('ZAR')) {
+      const result = await getRates('ZAR');
+      ctx.reply(formatRatesForTelegram(result));
+    } else {
+      ctx.reply(`Unknown command. Try /help for all commands.`);
+    }
+  });
+  
+  bot.launch();
+  console.log('Telegram bot launched');
+}
+
+// Format functions
+function formatRatesForTelegram(data) {
+  if (!data.success) return `Error: ${data.error}`;
+  
+  let text = `📊 ZAR Exchange Rates (${data.date})\n\n`;
+  for (const [curr, rate] of Object.entries(data)) {
+    if (curr === 'base' || curr === 'date' || curr === 'success') continue;
+    text += `${curr}: ${rate}\n`;
+  }
+  text += '\n🔗 betsorted.co.za';
+  return text;
+}
+
+function formatOddsForTelegram(data, league) {
+  if (!data.success) return `Error: ${data.error}`;
+  
+  let text = `⚽ ${league} Odds\n\n`;
+  
+  data.matches.forEach(match => {
+    text += `🏟️ ${match.home_team} vs ${match.away_team}\n`;
+    
+    if (match.odds) {
+      match.odds.forEach(outcome => {
+        text += `   ${outcome.name}: ${outcome.price}\n`;
+      });
+    }
+    text += '\n';
+  });
+  
+  text += '🔗 Bet with the best odds → betsorted.co.za';
+  return text;
+}
