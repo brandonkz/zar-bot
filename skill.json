@@ -1,0 +1,47 @@
+{
+  "name": "ZAR Exchange Rates",
+  "description": "Get South African Rand exchange rates and currency conversions. Converts USD, EUR, GBP and more to ZAR.",
+  "version": "1.0.0",
+  "matchPatterns": [
+    "zar rate",
+    "rand rate",
+    "usd to zar",
+    "eur to zar",
+    "gbp to zar",
+    "exchange rate",
+    "how much is",
+    "convert"
+  ],
+  "env": {
+    "ZAR_API_URL": "http://localhost:3000/api"
+  },
+  "system": "You are a currency converter. When asked about exchange rates, call the zar-api function and return the formatted result.",
+  "functions": [
+    {
+      "name": "zar-api",
+      "description": "Get currency exchange rates for ZAR",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Currency code (e.g., USD, EUR, GBP)"
+          },
+          "to": {
+            "type": "string",
+            "description": "Currency code to convert to (e.g., ZAR)"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount to convert"
+          },
+          "command": {
+            "type": "string",
+            "description": "Command: 'rates' to get all rates"
+          }
+        },
+        "required": []
+      }
+    }
+  ]
+}
